@@ -15,9 +15,8 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ServerApp
         Thread dinlemeThread;
         NetworkStream anaStream;
 
-        // HIZ ÖLÇÜM DEĞİŞKENLERİ
-        int kareSayisi = 0;       // O saniyedeki FPS
-        long gelenVeriBoyutu = 0; // O saniyedeki KB
+        int kareSayisi = 0;      
+        long gelenVeriBoyutu = 0; 
 
         public Form1()
         {
@@ -46,35 +45,21 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ServerApp
                         client.NoDelay = true;
                         anaStream = client.GetStream();
 
-                        // --- ADIM 1: ÖNCE KİMLİK BİLGİSİNİ OKU ---
-                        // Client ilk bağlandığında "INFO|..." diye bir yazı atıyor.
-                        // Bunu okumak için StreamReader kullanalım ama Stream'i kapatmasın diye dikkat edelim.
-                        // Basitçe byte olarak okuyup string'e çevirelim.
-
                         byte[] buffer = new byte[1024];
                         int okunan = anaStream.Read(buffer, 0, buffer.Length);
                         string ilkMesaj = Encoding.UTF8.GetString(buffer, 0, okunan);
 
-                        // Mesajın içinden bilgileri çek (INFO|PC|USER|OS)
                         if (ilkMesaj.StartsWith("INFO"))
                         {
                             string[] parcalar = ilkMesaj.Split('|');
-                            // parcalar[0] = INFO
-                            // parcalar[1] = PC Adı
-                            // parcalar[2] = Kullanıcı
-                            // parcalar[3] = OS (veya fazlası)
 
                             string bilgiMetni = $"Bağlı PC: {parcalar[1]} / Kullanıcı: {parcalar[2]}";
 
-                            // Label'a yaz
                             lblPCBilgi.Invoke((MethodInvoker)delegate {
                                 lblPCBilgi.Text = bilgiMetni;
                                 lblPCBilgi.ForeColor = Color.Blue;
                             });
                         }
-                        // ------------------------------------------
-
-                        // Görüntü Döngüsü Başlıyor
                         while (true)
                         {
                             // 1. Header Oku
