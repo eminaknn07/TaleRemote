@@ -1,0 +1,1 @@
+# TaleSoft.UzakMasaustuAraci
