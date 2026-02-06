@@ -12,7 +12,6 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
 {
     public partial class Form1 : Form
     {
-        // --- ROBOT ELİ ---
         [DllImport("user32.dll")]
         static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
         [DllImport("user32.dll")]
@@ -25,15 +24,12 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
         private const int MOUSEEVENTF_RIGHTUP = 0x0010;   // Sağ Tık Bırak
         private long aktifKalite = 30L;
 
-        // Klavye Sabitleri
         private const int KEYEVENTF_KEYUP = 0x0002;
 
         TcpClient client;
         NetworkStream stream;
         Thread anaIslemThread;
 
-        // TRAFİK POLİSİ (Senkronizasyon)
-        // Başlangıçta true yapıyoruz ki ilk resmi hemen yollasın
         AutoResetEvent onayBekleyicisi = new AutoResetEvent(true);
 
         public Form1()
@@ -57,29 +53,24 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
                 {
                     DurumGuncelle("Sunucu aranıyor...", Color.OrangeRed);
 
-                    // Ngrok Ayarları
                     client = new TcpClient("2.tcp.eu.ngrok.io", 13492);
                     client.NoDelay = true;
                     stream = client.GetStream();
 
                     DurumGuncelle("Bağlandı! Kimlik gönderiliyor...", Color.Yellow);
 
-                    // --- YENİ BÖLÜM: BİLGİSAYAR BİLGİLERİNİ GÖNDER ---
-                    // Format: PCAdi|KullaniciAdi|OS
                     string pcAdi = Environment.MachineName;
                     string kullanici = Environment.UserName;
-                    string os = Environment.OSVersion.ToString(); // Basit OS bilgisi
+                    string os = Environment.OSVersion.ToString(); 
 
-                    string kimlikBilgisi = $"INFO|{pcAdi}|{kullanici}|{os}\n"; // Başına INFO koyduk, sonuna \n
+                    string kimlikBilgisi = $"INFO|{pcAdi}|{kullanici}|{os}\n";
                     byte[] kimlikBytes = Encoding.UTF8.GetBytes(kimlikBilgisi);
 
                     stream.Write(kimlikBytes, 0, kimlikBytes.Length);
                     stream.Flush();
-                    // --------------------------------------------------
 
                     DurumGuncelle("Bağlandı! Görüntü gidiyor.", Color.Green);
 
-                    // Dinleme ve Görüntü gönderme işlemleri devam ediyor...
                     Thread dinleme = new Thread(KomutlariVeOnayiDinle);
                     dinleme.IsBackground = true;
                     dinleme.Start();
@@ -104,8 +95,6 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
             {
                 try
                 {
-                    // --- GÜNCELLEME: Kalite artık dinamik ---
-                    // 'aktifKalite' değişkeni IsleKomut tarafından değiştirilecek
                     myEncoderParameters.Param[0] = new EncoderParameter(myEncoder, aktifKalite);
 
                     int genislik = Screen.PrimaryScreen.Bounds.Width;
@@ -118,13 +107,11 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
                             g.CopyFromScreen(0, 0, 0, 0, ekran.Size);
                         }
 
-                        // Yarı yarıya küçültmeye devam (Performans için)
                         using (Bitmap kucukResim = new Bitmap(ekran, new Size(genislik / 2, yukseklik / 2)))
                         {
                             byte[] resimBytes;
                             using (MemoryStream ms = new MemoryStream())
                             {
-                                // Dinamik kalite ile kaydet
                                 kucukResim.Save(ms, jpgEncoder, myEncoderParameters);
                                 resimBytes = ms.ToArray();
                             }
@@ -140,7 +127,6 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
                         }
                     }
 
-                    // Bekleme süresi (FPS ayarı)
                     Thread.Sleep(50);
                 }
                 catch { break; }
@@ -153,18 +139,15 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
                 string[] parcalar = komutSatiri.Split('|');
                 string komutTipi = parcalar[0];
 
-                // --- GÜNCELLEME: KALİTE AYARI ---
                 if (komutTipi == "KALITE")
                 {
                     long yeniKalite = long.Parse(parcalar[1]);
 
-                    // Sınırlandırma (Çok bozulmasın veya şişmesin)
                     if (yeniKalite < 5) yeniKalite = 5;
                     if (yeniKalite > 80) yeniKalite = 80;
 
-                    aktifKalite = yeniKalite; // Değişkeni güncelle
+                    aktifKalite = yeniKalite; 
                 }
-                // --- MOUSE İŞLEMLERİ ---
                 else if (komutTipi.StartsWith("MOUSE"))
                 {
                     var culture = System.Globalization.CultureInfo.InvariantCulture;
@@ -186,10 +169,9 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
                             mouse_event(MOUSEEVENTF_RIGHTDOWN, hedefX, hedefY, 0, 0); break;
                         case "MOUSE_R_UP":
                             mouse_event(MOUSEEVENTF_RIGHTUP, hedefX, hedefY, 0, 0); break;
-                        case "MOUSE_MOVE": break; // Zaten SetCursorPos ile gitti
+                        case "MOUSE_MOVE": break; 
                     }
                 }
-                // --- KLAVYE İŞLEMLERİ ---
                 else if (komutTipi == "KEY_DOWN")
                 {
                     byte tusKodu = byte.Parse(parcalar[1]);
@@ -219,9 +201,6 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ClientApp
                     }
                     else
                     {
-                        // DÜZELTME BURADA:
-                        // Eskiden sadece "TIKLA" varsa işliyorduk.
-                        // Şimdi ne gelirse gelsin (MOUSE, KEY vs.) işleyiciye gönderiyoruz.
                         IsleKomut(satir);
                     }
                 }

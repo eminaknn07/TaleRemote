@@ -62,7 +62,6 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ServerApp
                         }
                         while (true)
                         {
-                            // 1. Header Oku
                             byte[] boyutBuffer = new byte[4];
                             int hOkunan = 0;
                             while (hOkunan < 4)
@@ -75,7 +74,6 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ServerApp
 
                             if (boyut < 0 || boyut > 10000000) continue;
 
-                            // 2. Resim Oku
                             byte[] resimBuffer = new byte[boyut];
                             int tOkunan = 0;
                             while (tOkunan < boyut)
@@ -85,10 +83,8 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ServerApp
                                 tOkunan += k;
                             }
 
-                            // --- İSTATİSTİK GÜNCELLEME ---
-                            kareSayisi++;               // 1 kare daha geldi
-                            gelenVeriBoyutu += boyut;   // Şu kadar byte geldi
-                            // -----------------------------
+                            kareSayisi++;              
+                            gelenVeriBoyutu += boyut;   
 
                             using (MemoryStream ms = new MemoryStream(resimBuffer))
                             {
@@ -112,40 +108,32 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ServerApp
             catch (Exception ex) { MessageBox.Show("Server Hatası: " + ex.Message); }
         }
 
-        // --- TIMER: HER SANİYE HIZI EKRANA YAZAR ---
 
         int sunucuTarafiKalite = 30;
         private void timer1_Tick(object sender, EventArgs e)
         {
-            // 1. Hızı Ekrana Yaz
             double kbHiz = gelenVeriBoyutu / 1024.0;
             lblHiz.Text = $"FPS: {kareSayisi} - Hız: {kbHiz:0.0} KB/s - Kalite: %{sunucuTarafiKalite}";
 
-            // 2. OTOMATİK KALİTE AYARI (ADAPTIVE QUALITY)
-            // Eğer bağlantı varsa ve veri akıyorsa kararı ver
             if (anaStream != null && kareSayisi > 0)
             {
                 bool degisiklikGerekli = false;
 
-                // Durum: Çok Yavaş (Kare sayısı 8'in altındaysa kalite düşür)
                 if (kareSayisi < 8 && sunucuTarafiKalite > 10)
                 {
-                    sunucuTarafiKalite -= 10; // Kaliteyi 10 puan düşür
+                    sunucuTarafiKalite -= 10; 
                     degisiklikGerekli = true;
                 }
-                // Durum: Çok Hızlı (Kare sayısı 20'nin üstündeyse kalite arttır)
                 else if (kareSayisi > 20 && sunucuTarafiKalite < 80)
                 {
-                    sunucuTarafiKalite += 10; // Kaliteyi 10 puan arttır
+                    sunucuTarafiKalite += 10;
                     degisiklikGerekli = true;
                 }
 
-                // Eğer karar değiştiyse Müşteriye bildir
                 if (degisiklikGerekli)
                 {
                     try
                     {
-                        // Komut Formatı: KALITE|20
                         string komut = $"KALITE|{sunucuTarafiKalite}\n";
                         byte[] veri = Encoding.UTF8.GetBytes(komut);
                         lock (anaStream) { anaStream.Write(veri, 0, veri.Length); }
@@ -154,12 +142,10 @@ namespace TaleSoft.UzakMasaustuAraci.Win.UI.ServerApp
                 }
             }
 
-            // Sayaçları sıfırla
             kareSayisi = 0;
             gelenVeriBoyutu = 0;
         }
 
-        // --- FARE VE KLAVYE EVENTLERİ (Aynen Kalıyor) ---
         private void KomutGonder(string tip, int x, int y)
         {
             if (anaStream != null)
